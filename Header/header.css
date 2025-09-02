@@ -1,0 +1,28 @@
+body {
+  background-color: rgb(70, 70, 70);
+  display: flex;
+  height: 100vh;
+  justify-content: center;
+}
+
+form {
+  /*Vai alinhar o input (barrinha de pesquisa) e a lupinha ("botão")*/
+  display: flex;
+  align-items: center;
+}
+
+input {
+  height: 23px;
+  padding: 5px;
+}
+
+.searchButton {
+  background-image: url("lupa.png");
+  background-size: contain;
+  background-position: center;
+  background-repeat: no-repeat;
+  width: 24px;
+  height: 35px;
+  border: none;
+  cursor: pointer;
+}
