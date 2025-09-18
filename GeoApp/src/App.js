@@ -3,7 +3,7 @@ import { StyleSheet, Text, View } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { NavigationContainer } from '@react-navigation/native';
 import 'react-native-gesture-handler';
-import TelaInicial from "../screens/TelaInicial";
+import TelaInicial from '../screens/TelaInicial';
 export default function App() {
   return (
     <>
