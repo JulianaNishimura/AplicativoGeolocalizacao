@@ -1,3 +1,4 @@
+// TelaInicial.js
 import React, { useState, useEffect } from "react";
 import {
   View,
@@ -9,13 +10,26 @@ import {
 import { SafeAreaView } from "react-native";
 import MapView, { Marker } from "react-native-maps";
 import * as Location from "expo-location";
+import Footer from './Footer'; // **Importe o Footer aqui**
 
 export default function TelaInicial() {
   const [isGpsEnabled, setIsGpsEnabled] = useState(false);
   const [location, setLocation] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [eta, setEta] = useState(null);
+
+  const getGpsStatus = () => {
+    if (loading) {
+      return "Conectando...";
+    }
+    if (isGpsEnabled && location) {
+      return "Online";
+    }
+    return "Offline";
+  };
 
   const toggleGps = async () => {
+    // ... sua lógica existente para ligar/desligar o GPS
     if (!isGpsEnabled) {
       let { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== "granted") {
@@ -34,124 +48,19 @@ export default function TelaInicial() {
 
   return (
     <View style={styles.container}>
-      <SafeAreaView style={styles.safeArea}>
-        <View style={styles.header}>
-          <Text style={styles.headerText}>Location Reminders</Text>
-        </View>
-
-        {location ? (
-          <MapView
-            style={styles.map}
-            region={{
-              latitude: location.coords.latitude,
-              longitude: location.coords.longitude,
-              latitudeDelta: 0.01,
-              longitudeDelta: 0.01,
-            }}
-          >
-            <Marker
-              coordinate={{
-                latitude: location.coords.latitude,
-                longitude: location.coords.longitude,
-              }}
-              title="Você está aqui"
-            />
-          </MapView>
-        ) : (
-          <View style={[styles.map, styles.mapPlaceholder]}>
-            {loading ? (
-              <ActivityIndicator size="large" color="#00bcd4" />
-            ) : (
-              <Text style={{ color: "#ccc" }}>
-                Ative o GPS para mostrar sua localização
-              </Text>
-            )}
-          </View>
-        )}
-
-        <View style={styles.navigator}>
-          <TouchableOpacity style={styles.navButton}>
-            <Text style={styles.navText}>Map</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.navButton}>
-            <Text style={styles.navText}>List</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.addButton} onPress={toggleGps}>
-            <Text style={styles.addButtonText}>
-              {isGpsEnabled ? "📍" : "+"}
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.navButton}>
-            <Text style={styles.navText}>Settings</Text>
-          </TouchableOpacity>
-        </View>
-      </SafeAreaView>
+      {/* ... o restante do seu código (header, mapa, etc.) */}
+      
+      {/* O componente Footer deve vir por último */}
+      <Footer status={getGpsStatus()} eta={eta} />
     </View>
   );
 }
 
+// ... seus estilos existentes
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#1b1b21ff",
   },
-  safeArea: {
-    flex: 1,
-  },
-  header: {
-    height: 60,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#1a1a1f",
-    borderBottomWidth: 1,
-    borderBottomColor: "#333",
-  },
-  headerText: {
-    color: "#fff",
-    fontSize: 18,
-    fontWeight: "bold",
-  },
-  map: {
-    height: "95%",
-    width: "100%",
-  },
-  mapPlaceholder: {
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#2a2a2f",
-  },
-  navigator: {
-    flexDirection: "row",
-    height: 80,
-    backgroundColor: "#1a1a1f",
-    alignItems: "center",
-    justifyContent: "space-around",
-    borderTopWidth: 1,
-    borderTopColor: "#333",
-  },
-  navButton: {
-    alignItems: "center",
-    justifyContent: "center",
-    flex: 1,
-  },
-  navText: {
-    color: "#fff",
-    fontSize: 14,
-  },
-  addButton: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: "#00bcd4",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  addButtonText: {
-    color: "#fff",
-    fontSize: 24,
-    fontWeight: "bold",
-  },
+  // ... outros estilos
 });
