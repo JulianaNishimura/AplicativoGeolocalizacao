@@ -5,8 +5,11 @@ body {
   justify-content: center;
 }
 
+header {
+  /* Pode precisar de estilização para posicionamento no app */
+}
+
 form {
-  /*Vai alinhar o input (barrinha de pesquisa) e a lupinha ("botão")*/
   display: flex;
   align-items: center;
 }
@@ -16,13 +19,8 @@ input {
   padding: 5px;
 }
 
-.searchButton {
-  background-image: url("lupa.png");
-  background-size: contain;
-  background-position: center;
-  background-repeat: no-repeat;
-  width: 24px;
+/* Estilo para a imagem da lupa, se você usá-la */
+.search-icon {
+  width: 24px; /* Ajuste o tamanho conforme necessário */
   height: 35px;
-  border: none;
-  cursor: pointer;
 }
