@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, Text, View } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -14,14 +15,16 @@ export default function App() {
         <Tab.Screen name="Profile" component={ProfileScreen} />
       </Tab.Navigator>
     </NavigationContainer>
+=======
+import { StatusBar } from "expo-status-bar";
+import { StyleSheet } from "react-native";
+import TelaInicial from "../screens/TelaInicial";
+export default function App() {
+  return (
+    <>
+      <StatusBar style="light" backgroundColor="#131317ff" />
+      <TelaInicial />
+    </>
+>>>>>>> 7714afb6998187a9171d866a3a1c81f6a13cc061
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});

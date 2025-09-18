@@ -11,18 +11,28 @@
   },
   "dependencies": {
     "@expo/metro-runtime": "~5.0.4",
+<<<<<<< HEAD
     "@react-navigation/bottom-tabs": "^7.4.6",
     "@react-navigation/native": "^7.1.17",
+=======
+    "@vis.gl/react-google-maps": "^1.5.5",
+>>>>>>> 7714afb6998187a9171d866a3a1c81f6a13cc061
     "expo": "~53.0.20",
     "expo-status-bar": "~2.2.3",
     "react": "19.0.0",
     "react-dom": "19.0.0",
     "react-native": "0.79.5",
+<<<<<<< HEAD
     "react-native-gesture-handler": "^2.28.0",
     "react-native-reanimated": "^4.0.2",
     "react-native-safe-area-context": "^5.6.1",
     "react-native-screens": "^4.14.1",
     "react-native-web": "^0.20.0"
+=======
+    "react-native-maps": "1.20.1",
+    "react-native-web": "^0.20.0",
+    "expo-location": "~18.1.6"
+>>>>>>> 7714afb6998187a9171d866a3a1c81f6a13cc061
   },
   "devDependencies": {
     "@babel/core": "^7.20.0"
