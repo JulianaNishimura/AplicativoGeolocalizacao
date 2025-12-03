@@ -24,6 +24,7 @@ export default function TelaInicial({
     const [loading, setLoading] = useState(false);
     const [isGpsEnabled, setIsGpsEnabled] = useState(false);
     const [location, setLocation] = useState(null);
+    const [notificationSent, setNotificationSent] = useState(false);
 
     useEffect(() => {
         const requestNotificationPermissions = async () => {
@@ -44,11 +45,16 @@ export default function TelaInicial({
                 { latitude: location.coords.latitude, longitude: location.coords.longitude },
                 destination
             );
-            if (distance < 100) {
+            if (distance < 100 && !notificationSent) {
                 scheduleNotification();
+                setNotificationSent(true);
             }
         }
-    }, [location, destination]);
+    }, [location, destination, notificationSent]);
+
+    useEffect(() => {
+        setNotificationSent(false);
+    }, [destination]);
 
     const getDistance = (p1, p2) => {
         const R = 6378137;
