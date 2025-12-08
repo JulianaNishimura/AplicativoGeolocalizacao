@@ -1,20 +1,40 @@
-import { addWalk } from "@/store/walksSlice";
+import PinnedLocations from "@/components/PinnedLocations";
+import { RootState } from "@/store";
+import { addPin, addWalk, setDestination } from "@/store/walksSlice";
 import * as Location from "expo-location";
+import * as Notifications from "expo-notifications";
 import { useRouter } from "expo-router";
 import haversine from "haversine";
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { Button, StyleSheet, Text, useColorScheme, View } from "react-native";
+import {
+  Alert,
+  Button,
+  StyleSheet,
+  Text,
+  useColorScheme,
+  View,
+} from "react-native";
 import "react-native-get-random-values";
 import MapView, { Marker, Polyline } from "react-native-maps";
 import {
   SafeAreaView,
   useSafeAreaInsets,
 } from "react-native-safe-area-context";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { v4 as uuid } from "uuid";
 
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: true,
+    shouldPlaySound: false,
+    shouldSetBadge: false,
+  }),
+});
+
 export default function WalkApp() {
-  const [location, setLocation] = useState<Location.LocationObjectCoords | null>(null);
+  const [location, setLocation] = useState<Location.LocationObjectCoords | null>(
+    null,
+  );
   const route = useRef<Location.LocationObjectCoords[]>([]);
   const [isWalking, setIsWalking] = useState(false);
   const [distance, setDistance] = useState(0);
@@ -24,6 +44,9 @@ export default function WalkApp() {
   const router = useRouter();
   const colorScheme = useColorScheme();
   const dispatch = useDispatch();
+  const destination = useSelector((state: RootState) => state.walks.destination);
+
+  const ARRIVAL_THRESHOLD = 50;
 
   useEffect(() => {
     (async () => {
@@ -66,9 +89,25 @@ export default function WalkApp() {
 
           setDistance((d) => d + newDist);
         }
+
+        if (destination) {
+          const distanceToDestination = haversine(loc.coords, destination, {
+            unit: "meter",
+          });
+          if (distanceToDestination < ARRIVAL_THRESHOLD) {
+            Notifications.scheduleNotificationAsync({
+              content: {
+                title: "Destino alcançado!",
+                body: `Você chegou ao seu destino: ${destination.name}`,
+              },
+              trigger: null,
+            });
+            dispatch(setDestination(null));
+          }
+        }
       },
     );
-  }, []);
+  }, [destination, dispatch]);
 
   const stopWalk = useCallback(() => {
     setIsWalking(false);
@@ -91,6 +130,23 @@ export default function WalkApp() {
   const handleNavigateToHistory = useCallback(() => {
     router.navigate("/history");
   }, [router]);
+
+  const handlePinLocation = useCallback(() => {
+    if (location) {
+      Alert.prompt("Pin Location", "Enter a name for this location", (name) => {
+        if (name) {
+          dispatch(
+            addPin({
+              id: uuid(),
+              name,
+              latitude: location.latitude,
+              longitude: location.longitude,
+            }),
+          );
+        }
+      });
+    }
+  }, [dispatch, location]);
 
   if (!location) {
     return <Text>Carregando localização...</Text>;
@@ -124,10 +180,26 @@ export default function WalkApp() {
             title="Agora"
           />
         )}
+        {destination && (
+          <Marker
+            coordinate={{
+              latitude: destination.latitude,
+              longitude: destination.longitude,
+            }}
+            title={destination.name}
+            pinColor="green"
+          />
+        )}
       </MapView>
 
-      <View style={[styles.panel, { bottom: insets.bottom + 40 }]}>
-        <Text style={styles.text}>
+      <View
+        style={[
+          styles.panel,
+          colorScheme === "dark" ? styles.panelDark : styles.panelLight,
+          { bottom: insets.bottom + 40 },
+        ]}
+      >
+        <Text style={[styles.text, colorScheme === "dark" ? { color: "white" } : { color: "black" }]}>
           Distância:{" "}
           {(distance / 1000).toLocaleString("pt-BR", {
             minimumFractionDigits: 2,
@@ -135,12 +207,26 @@ export default function WalkApp() {
           })}{" "}
           km
         </Text>
+        {destination && (
+          <Text style={styles.text}>
+            Destino: {destination.name} (
+            {(
+              haversine(location, destination, { unit: "meter" }) / 1000
+            ).toLocaleString("pt-BR", {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2,
+            })}{" "}
+            km)
+          </Text>
+        )}
         {!isWalking ? (
           <Button title="Iniciar Caminhada" onPress={startWalk} />
         ) : (
           <Button title="Parar" onPress={stopWalk} />
         )}
+        <Button title="Pin Location" onPress={handlePinLocation} />
         <Button title="Ver histórico" onPress={handleNavigateToHistory} />
+        <PinnedLocations />
       </View>
     </SafeAreaView>
   );
@@ -160,6 +246,12 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   text: { fontSize: 18 },
+  panelLight: {
+    backgroundColor: "white",
+  },
+  panelDark: {
+    backgroundColor: "#333",
+  },
 });
 
 const darkMapStyle = [
