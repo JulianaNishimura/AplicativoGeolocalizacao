@@ -1,41 +1,161 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
     View,
     StyleSheet,
     Text,
     TouchableOpacity,
     ActivityIndicator,
+    Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native";
+import MapView, { Marker } from "react-native-maps";
+import * as Location from "expo-location";
+import MapViewDirections from "react-native-maps-directions";
+import * as Notifications from "expo-notifications";
+import { API_KEY } from "../src/config";
 
-export default function TelaInicial() {
+export default function TelaInicial({
+    navigation,
+    markers,
+    setMarkers,
+    destination,
+    setDestination,
+}) {
     const [loading, setLoading] = useState(false);
     const [isGpsEnabled, setIsGpsEnabled] = useState(false);
     const [location, setLocation] = useState(null);
+    const [notificationSent, setNotificationSent] = useState(false);
+
+    useEffect(() => {
+        const requestNotificationPermissions = async () => {
+            const { status } = await Notifications.requestPermissionsAsync();
+            if (status !== "granted") {
+                Alert.alert(
+                    "Permissão negada",
+                    "A permissão de notificação é necessária para receber lembretes."
+                );
+            }
+        };
+        requestNotificationPermissions();
+    }, []);
+
+    useEffect(() => {
+        if (location && destination) {
+            const distance = getDistance(
+                { latitude: location.coords.latitude, longitude: location.coords.longitude },
+                destination
+            );
+            if (distance < 100 && !notificationSent) {
+                scheduleNotification();
+                setNotificationSent(true);
+            }
+        }
+    }, [location, destination, notificationSent]);
+
+    useEffect(() => {
+        setNotificationSent(false);
+    }, [destination]);
+
+    const getDistance = (p1, p2) => {
+        const R = 6378137;
+        const dLat = ((p2.latitude - p1.latitude) * Math.PI) / 180;
+        const dLong = ((p2.longitude - p1.longitude) * Math.PI) / 180;
+        const a =
+            Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+            Math.cos((p1.latitude * Math.PI) / 180) *
+            Math.cos((p2.latitude * Math.PI) / 180) *
+            Math.sin(dLong / 2) *
+            Math.sin(dLong / 2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        const d = R * c;
+        return d;
+    };
+
+    const scheduleNotification = async () => {
+        await Notifications.scheduleNotificationAsync({
+            content: {
+                title: "Lembrete de Localização",
+                body: "Você chegou ao seu destino!",
+            },
+            trigger: null,
+        });
+    };
+
+    useEffect(() => {
+        let subscription;
+        const startWatching = async () => {
+            let { status } = await Location.requestForegroundPermissionsAsync();
+            if (status !== "granted") {
+                Alert.alert(
+                    "Permissão negada",
+                    "A permissão de localização é necessária para usar o GPS."
+                );
+                return;
+            }
+
+            subscription = await Location.watchPositionAsync(
+                {
+                    accuracy: Location.Accuracy.High,
+                    timeInterval: 1000,
+                    distanceInterval: 1,
+                },
+                (location) => {
+                    setLocation(location);
+                }
+            );
+        };
+
+        if (isGpsEnabled) {
+            startWatching();
+        }
+
+        return () => {
+            if (subscription) {
+                subscription.remove();
+            }
+        };
+    }, [isGpsEnabled]);
+
+    const handleAddMarker = (coordinate) => {
+        Alert.prompt("Novo Marcador", "Digite um nome para o marcador:", [
+            {
+                text: "Cancelar",
+                style: "cancel",
+            },
+            {
+                text: "Salvar",
+                onPress: (title) => {
+                    if (title) {
+                        setMarkers([
+                            ...markers,
+                            { coordinate, title },
+                        ]);
+                    }
+                },
+            },
+        ]);
+    };
 
     const toggleGps = async () => {
-        if (navigator.geolocation) {
-            setLoading(true);
-            navigator.geolocation.getCurrentPosition(
-                (position) => {
-                    setLocation({
-                        coords: {
-                            latitude: position.coords.latitude,
-                            longitude: position.coords.longitude,
-                        }
-                    });
-                    setIsGpsEnabled(true);
-                    setLoading(false);
-                },
-                (error) => {
-                    alert("Erro ao obter localização: " + error.message);
-                    setIsGpsEnabled(false);
-                    setLoading(false);
-                },
-                { enableHighAccuracy: true, timeout: 20000, maximumAge: 1000 }
-            );
-        } else {
-            alert("Geolocalização não é suportada neste navegador.");
+        setLoading(true);
+        try {
+            let { status } = await Location.requestForegroundPermissionsAsync();
+            if (status !== "granted") {
+                Alert.alert(
+                    "Permissão negada",
+                    "A permissão de localização é necessária para usar o GPS."
+                );
+                setLoading(false);
+                return;
+            }
+
+            let location = await Location.getCurrentPositionAsync({});
+            setLocation(location);
+            setIsGpsEnabled(true);
+        } catch (error) {
+            Alert.alert("Erro", "Não foi possível obter a localização.");
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -43,32 +163,37 @@ export default function TelaInicial() {
         if (location) {
             const { latitude, longitude } = location.coords;
             return (
-                <View style={styles.map}>
-                    <View style={styles.locationInfo}>
-                        <Text style={styles.locationText}>
-                            📍 Sua localização
-                        </Text>
-                        <Text style={styles.coordsText}>
-                            Lat: {latitude.toFixed(6)}
-                        </Text>
-                        <Text style={styles.coordsText}>
-                            Lng: {longitude.toFixed(6)}
-                        </Text>
-                        <TouchableOpacity 
-                            style={styles.openMapButton}
-                            onPress={() => {
-                                const url = `https://www.google.com/maps?q=${latitude},${longitude}`;
-                                if (typeof window !== 'undefined') {
-                                    window.open(url, '_blank');
-                                }
-                            }}
-                        >
-                            <Text style={styles.openMapText}>
-                                Abrir no Google Maps
-                            </Text>
-                        </TouchableOpacity>
-                    </View>
-                </View>
+                <MapView
+                    style={styles.map}
+                    initialRegion={{
+                        latitude,
+                        longitude,
+                        latitudeDelta: 0.0922,
+                        longitudeDelta: 0.0421,
+                    }}
+                    onLongPress={(e) => handleAddMarker(e.nativeEvent.coordinate)}
+                >
+                    <Marker
+                        coordinate={{ latitude, longitude }}
+                        title="Sua localização"
+                    />
+                    {markers.map((marker, index) => (
+                        <Marker
+                            key={index}
+                            coordinate={marker.coordinate}
+                            title={marker.title}
+                        />
+                    ))}
+                    {destination && (
+                        <MapViewDirections
+                            origin={location.coords}
+                            destination={destination}
+                            apikey={API_KEY}
+                            strokeWidth={3}
+                            strokeColor="hotpink"
+                        />
+                    )}
+                </MapView>
             );
         } else {
             return (
